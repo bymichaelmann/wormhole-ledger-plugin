@@ -1,0 +1,39 @@
+# Build outputs
+build/
+bin/
+*.o
+*.elf
+*.hex
+*.bin
+
+# SDK submodule
+ethereum-plugin-sdk/
+
+# Python
+__pycache__/
+*.pyc
+*.pyo
+.venv/
+venv/
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Fuzzing
+fuzzing/run_fuzzer
+fuzzing/*.o
+fuzzing/crash-*
+fuzzing/leak-*
+fuzzing/timeout-*
+
+# Test artifacts
+tests/__pycache__/
+tests/.pytest_cache/

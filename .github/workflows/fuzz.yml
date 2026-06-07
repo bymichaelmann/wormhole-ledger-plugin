@@ -1,0 +1,29 @@
+name: Fuzzing
+
+on:
+  schedule:
+    - cron: "0 6 * * 1"  # Every Monday at 06:00 UTC
+  workflow_dispatch:
+
+jobs:
+  fuzz:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          submodules: recursive
+
+      - name: Install dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y clang libfuzzer-dev
+
+      - name: Build fuzz harness
+        run: |
+          cd fuzzing
+          make
+
+      - name: Run fuzzer (30s)
+        run: |
+          cd fuzzing
+          ./run_fuzzer -max_total_time=30

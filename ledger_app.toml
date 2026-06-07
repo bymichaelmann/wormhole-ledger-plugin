@@ -1,0 +1,13 @@
+[app]
+name = "Wormhole Portal"
+version = "1.0.0"
+description = "Ledger plugin for the Wormhole Portal Token Bridge"
+authors = ["Wormhole Contributors"]
+repository = "https://github.com/wormhole-foundation/ledger-plugin-portal-bridge"
+homepage = "https://portalbridge.com"
+license = "Apache-2.0"
+icons = "icons/"
+
+[ethereum]
+contract = "0x3ee18b2214aff97000d974cf647e7c347e8fa585"
+plugin_name = "Wormhole Portal"
