@@ -1,6 +1,6 @@
 #pragma once
 
-#include "ledger_plugin.h"
+#include "eth_plugin_interface.h"
 
 /******************************************************************************
  * SELECTORS_LIST — every Wormhole Portal Token Bridge function selector.

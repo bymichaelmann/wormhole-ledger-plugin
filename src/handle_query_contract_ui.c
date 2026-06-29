@@ -124,14 +124,10 @@ static void format_address(const uint8_t *in, uint16_t chain_id, char *out, size
 }
 
 // ---------------------------------------------------------------------------
-// Helper: format a 32-byte big-endian uint256 as a decimal string using the
-// SDK's amountToString for full uint256 support (not truncated to 64 bits).
-// For ETH amounts (arbiter fee), display in ETH with 18 decimals.
+// Helper: format a 32-byte big-endian uint256 as a decimal string.
 // ---------------------------------------------------------------------------
 static void format_amount(const uint8_t *amount, char *out, size_t out_len) {
-    // Use the SDK-provided amountToString for full uint256 support.
-    // amountToString handles the full 32-byte big-endian value.
-    amountToString(amount, 32, out, out_len);
+    uint256_to_decimal(amount, 32, out, out_len);
 }
 
 // ---------------------------------------------------------------------------
@@ -165,8 +161,8 @@ static void set_dst_chain(ethQueryContractUI_t *msg, context_t *context) {
             break;
     }
     const char *name = get_chain_name(chain_id);
-    strlcpy(msg->title, "Dst Chain", sizeof(msg->title));
-    strlcpy(msg->msg, name, sizeof(msg->msg));
+    strlcpy(msg->title, "Dst Chain", msg->titleLength);
+    strlcpy(msg->msg, name, msg->msgLength);
 }
 
 static void set_recipient(ethQueryContractUI_t *msg, context_t *context) {
@@ -193,8 +189,8 @@ static void set_recipient(ethQueryContractUI_t *msg, context_t *context) {
             rec = context->data.handle_wrap_and_transfer_eth_data.recipient;
             break;
     }
-    strlcpy(msg->title, "Recipient", sizeof(msg->title));
-    format_address(rec, chain_id, msg->msg, sizeof(msg->msg));
+    strlcpy(msg->title, "Recipient", msg->titleLength);
+    format_address(rec, chain_id, msg->msg, msg->msgLength);
 }
 
 static void set_arbiter_fee(ethQueryContractUI_t *msg, context_t *context) {
@@ -210,9 +206,9 @@ static void set_arbiter_fee(ethQueryContractUI_t *msg, context_t *context) {
             fee = context->data.handle_wrap_and_transfer_eth_data.arbiter_fee;
             break;
     }
-    strlcpy(msg->title, "Arbiter Fee", sizeof(msg->title));
-    format_amount(fee, msg->msg, sizeof(msg->msg));
-    strlcat(msg->msg, " ETH", sizeof(msg->msg));
+    strlcpy(msg->title, "Arbiter Fee", msg->titleLength);
+    format_amount(fee, msg->msg, msg->msgLength);
+    strlcat(msg->msg, " wei", msg->msgLength);
 }
 
 static void set_nonce(ethQueryContractUI_t *msg, context_t *context) {
@@ -237,27 +233,29 @@ static void set_nonce(ethQueryContractUI_t *msg, context_t *context) {
             nonce = 0;
             break;
     }
-    strlcpy(msg->title, "Nonce", sizeof(msg->title));
-    format_nonce(nonce, msg->msg, sizeof(msg->msg));
+    strlcpy(msg->title, "Nonce", msg->titleLength);
+    format_nonce(nonce, msg->msg, msg->msgLength);
 }
 
 static void set_token_address(ethQueryContractUI_t *msg, context_t *context) {
-    strlcpy(msg->title, "Token Address", sizeof(msg->title));
+    strlcpy(msg->title, "Token Address", msg->titleLength);
+    // token_address is ABI-encoded: 12 zero bytes + 20-byte EVM address
     format_address(context->data.handle_attest_token_data.token_address,
-                   msg->msg, sizeof(msg->msg));
+                   2, msg->msg, msg->msgLength);
 }
 
 static void set_token(ethQueryContractUI_t *msg, context_t *context) {
-    strlcpy(msg->title, "Token", sizeof(msg->title));
+    strlcpy(msg->title, "Token", msg->titleLength);
+    // token is ABI-encoded: 12 zero bytes + 20-byte EVM address
     format_address(context->data.handle_transfer_tokens_data.token,
-                   msg->msg, sizeof(msg->msg));
+                   2, msg->msg, msg->msgLength);
 }
 
 static void set_amount(ethQueryContractUI_t *msg, context_t *context) {
-    strlcpy(msg->title, "Amount", sizeof(msg->title));
+    strlcpy(msg->title, "Amount", msg->titleLength);
     format_amount(context->data.handle_transfer_tokens_data.amount,
-                  msg->msg, sizeof(msg->msg));
-    strlcat(msg->msg, " tokens", sizeof(msg->msg));
+                  msg->msg, msg->msgLength);
+    strlcat(msg->msg, " tokens", msg->msgLength);
 }
 
 // ---------------------------------------------------------------------------
@@ -268,8 +266,8 @@ void handle_query_contract_ui(ethQueryContractUI_t *msg) {
     context_t *context = (context_t *) msg->pluginContext;
 
     // Reset UI fields.
-    memset(msg->title, 0, sizeof(msg->title));
-    memset(msg->msg, 0, sizeof(msg->msg));
+    memset(msg->title, 0, msg->titleLength);
+    memset(msg->msg, 0, msg->msgLength);
 
     switch (context->selectorIndex) {
         // ---------------------------------------------------------------

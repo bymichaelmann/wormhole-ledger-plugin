@@ -8,34 +8,47 @@ on:
 
 jobs:
   build:
+    name: Build plugin
     runs-on: ubuntu-latest
+    container:
+      image: ghcr.io/ledgerhq/ledger-app-builder/ledger-app-builder:latest
+
     steps:
       - uses: actions/checkout@v4
         with:
           submodules: recursive
 
-      - name: Install dependencies
+      - name: Build for Nano S
+        run: make BOLOS_SDK=$NANOS_SDK
+
+      - name: Build for Nano S Plus
         run: |
-          sudo apt-get update
-          sudo apt-get install -y gcc-multilib g++-multilib
+          make clean
+          make BOLOS_SDK=$NANOSP_SDK
 
-      - name: Clone ethereum-plugin-sdk
+      - name: Build for Nano X
         run: |
-          git clone --depth 1 https://github.com/LedgerHQ/ethereum-plugin-sdk.git
-          echo "ETHEREUM_PLUGIN_SDK=$(pwd)/ethereum-plugin-sdk" >> $GITHUB_ENV
+          make clean
+          make BOLOS_SDK=$NANOX_SDK
 
-      - name: Build plugin
-        run: make all
+      - name: Build for Stax
+        run: |
+          make clean
+          make BOLOS_SDK=$STAX_SDK
 
-      - name: Upload build artifacts
+      - name: Upload plugin binaries
         uses: actions/upload-artifact@v4
         with:
-          name: plugin-build
-          path: build/
+          name: plugin-binaries
+          path: bin/
 
   test:
+    name: Ragger tests (speculos)
     runs-on: ubuntu-latest
     needs: build
+    # Requires compiled binaries and a full speculos environment;
+    # enable by setting the RAGGER_TESTS_ENABLED repository variable to 'true'.
+    if: ${{ vars.RAGGER_TESTS_ENABLED == 'true' }}
     steps:
       - uses: actions/checkout@v4
 
@@ -44,11 +57,16 @@ jobs:
         with:
           python-version: "3.11"
 
-      - name: Install test dependencies
-        run: |
-          pip install -r tests/requirements.txt
+      - name: Download plugin binaries
+        uses: actions/download-artifact@v4
+        with:
+          name: plugin-binaries
+          path: tests/build
 
-      - name: Run Ragger tests (speculos)
+      - name: Install test dependencies
+        run: pip install -r tests/requirements.txt
+
+      - name: Run Ragger tests
         run: |
           cd tests
           pytest -v -x
