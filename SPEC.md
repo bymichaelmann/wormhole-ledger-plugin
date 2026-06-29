@@ -39,21 +39,21 @@ Use the exact 4-byte selectors from the Wormhole Token Bridge contract:
 
 | Selector name | 4-byte hex | Params to display |
 |---|---|---|
-| ATTEST_TOKEN | 0xc48fa115 | tokenAddress, nonce |
-| WRAP_AND_TRANSFER_ETH | 0x9981509f | recipientChain, recipient, arbiterFee, nonce |
-| WRAP_AND_TRANSFER_ETH_WITH_PAYLOAD | 0xbee9cdfc | recipientChain, recipient, arbiterFee, nonce |
-| TRANSFER_TOKENS | 0x0f5287b0 | token, amount, recipientChain, recipient, arbiterFee, nonce |
-| TRANSFER_TOKENS_WITH_PAYLOAD | 0xc5a5ebda | token, amount, recipientChain, recipient, arbiterFee, nonce |
-| COMPLETE_TRANSFER | 0xc6878519 | encodedVM (no display — just confirm) |
-| COMPLETE_TRANSFER_WITH_PAYLOAD | 0xc3f511c1 | encodedVM (no display — just confirm) |
-| COMPLETE_TRANSFER_AND_UNWRAP_ETH | 0xff200cde | encodedVM (no display — just confirm) |
-| COMPLETE_TRANSFER_AND_UNWRAP_ETH_WITH_PAYLOAD | 0x1c8475e4 | encodedVM (no display — just confirm) |
-| ATTEST_TOKEN | 0xc48fa115 | tokenAddress, nonce |
-| CREATE_WRAPPED | 0xe8059810 | encodedVM (no display) |
-| UPDATE_WRAPPED | 0xf768441f | encodedVM (no display) |
-| REGISTER_CHAIN | 0xa5799f93 | encodedVM (no display) |
-| SUBMIT_RECOVER_CHAIN_ID | 0x178149e7 | encodedVM (no display) |
-| UPGRADE | 0x25394645 | encodedVM (no display) |
+|| ATTEST_TOKEN | 0xc48fa115 | tokenAddress, nonce |
+|| WRAP_AND_TRANSFER_ETH | 0x9981509f | recipientChain, recipient, arbiterFee, nonce |
+|| WRAP_AND_TRANSFER_ETH_WITH_PAYLOAD | 0xbee9cdfc | recipientChain, recipient, nonce (NO arbiterFee) |
+|| TRANSFER_TOKENS | 0x0f5287b0 | token, amount, recipientChain, recipient, arbiterFee, nonce |
+|| TRANSFER_TOKENS_WITH_PAYLOAD | 0xc5a5ebda | token, amount, recipientChain, recipient, nonce (NO arbiterFee) |
+|| COMPLETE_TRANSFER | 0xc6878519 | encodedVM (no display — just confirm) |
+|| COMPLETE_TRANSFER_WITH_PAYLOAD | 0xc3f511c1 | encodedVM (no display — just confirm) |
+|| COMPLETE_TRANSFER_AND_UNWRAP_ETH | 0xff200cde | encodedVM (no display — just confirm) |
+|| COMPLETE_TRANSFER_AND_UNWRAP_ETH_WITH_PAYLOAD | 0x1c8475e4 | encodedVM (no display — just confirm) |
+|| ATTEST_TOKEN | 0xc48fa115 | tokenAddress, nonce |
+|| CREATE_WRAPPED | 0xe8059810 | encodedVM (no display) |
+|| UPDATE_WRAPPED | 0xf768441f | encodedVM (no display) |
+|| REGISTER_CHAIN | 0xa5799f93 | encodedVM (no display) |
+|| SUBMIT_RECOVER_CHAIN_ID | 0x178149e7 | encodedVM (no display) |
+|| UPGRADE | 0x25394645 | encodedVM (no display) |
 
 For the MVP, implement these **display-focused** functions:
 1. **WRAP_AND_TRANSFER_ETH** (0x9981509f) — most common user action
@@ -69,9 +69,11 @@ Mark the others as UNEXPECTED_PARAMETER (skip parsing, just confirm the tx).
 - Define SELECTORS_LIST with all 14 selectors from the table above.
 - Parameter enum: ENCODED_VM, TOKEN_ADDRESS, NONCE, RECIPIENT_CHAIN, RECIPIENT, ARBITER_FEE, PAYLOAD, TOKEN, AMOUNT, ENCODED_VM, UNEXPECTED_PARAMETER.
 - context_t struct with union of:
-  - handle_wrap_and_transfer_e_t_h_data: {recipient_chain(uint16_t), recipient(uint8_t[32]), arbiter_fee(uint8_t[32]), nonce(uint32_t)}
+  - handle_wrap_and_transfer_eth_data: {recipient_chain(uint16_t), recipient(uint8_t[32]), arbiter_fee(uint8_t[32]), nonce(uint32_t)}
+  - handle_wrap_and_transfer_eth_with_payload_data: {recipient_chain(uint16_t), recipient(uint8_t[32]), nonce(uint32_t)} (NO arbiter_fee)
   - handle_attest_token_data: {token_address(uint8_t[32]), nonce(uint32_t)}
   - handle_transfer_tokens_data: {token(uint8_t[32]), amount(uint8_t[32]), recipient_chain(uint16_t), recipient(uint8_t[32]), arbiter_fee(uint8_t[32]), nonce(uint32_t)}
+  - handle_transfer_tokens_with_payload_data: {token(uint8_t[32]), amount(uint8_t[32]), recipient_chain(uint16_t), recipient(uint8_t[32]), nonce(uint32_t)} (NO arbiter_fee)
 - Plus: next_param (uint8_t), offset (uint16_t), go_to_offset (bool), selectorIndex (selector_t).
 - ASSERT_SIZEOF_PLUGIN_CONTEXT at bottom.
 

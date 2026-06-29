@@ -30,8 +30,16 @@ fee, and nonce — allowing users to verify and approve transactions with confid
 | Field | Selector |
 |-------|----------|
 | **Selector** | `0xbee9cdfc` |
-| **Signature** | `wrapAndTransferEthWithPayload(uint16 recipientChain, bytes32 recipient, bytes32 arbiterFee, uint32 nonce, bytes payload)` |
-| **UI Screens** | 4 (same as WRAP_AND_TRANSFER_ETH; payload not displayed) |
+| **Signature** | `wrapAndTransferETHWithPayload(uint16 recipientChain, bytes32 recipient, uint32 nonce, bytes payload)` |
+| **UI Screens** | 3 (no Arbiter Fee) |
+
+| Screen | Title | Value |
+|--------|-------|-------|
+| 0 | Dst Chain | Human-readable chain name (e.g. "Solana", "Ethereum", "Polygon") |
+| 1 | Recipient | `0x`-prefixed hex address |
+| 2 | Nonce | Decimal uint32 |
+
+Note: This variant has no `arbiterFee` parameter. The `payload` is a dynamic bytes parameter that follows the nonce; it is not displayed on the device.
 
 ### 3. TRANSFER_TOKENS
 
@@ -55,8 +63,18 @@ fee, and nonce — allowing users to verify and approve transactions with confid
 | Field | Selector |
 |-------|----------|
 | **Selector** | `0xc5a5ebda` |
-| **Signature** | `transferTokensWithPayload(address token, uint256 amount, uint16 recipientChain, bytes32 recipient, bytes32 arbiterFee, uint32 nonce, bytes payload)` |
-| **UI Screens** | 6 (same as TRANSFER_TOKENS; payload not displayed) |
+| **Signature** | `transferTokensWithPayload(address token, uint256 amount, uint16 recipientChain, bytes32 recipient, uint32 nonce, bytes payload)` |
+| **UI Screens** | 5 (no Arbiter Fee) |
+
+| Screen | Title | Value |
+|--------|-------|-------|
+| 0 | Token | `0x`-prefixed token contract address |
+| 1 | Amount | Raw token amount |
+| 2 | Dst Chain | Human-readable chain name |
+| 3 | Recipient | `0x`-prefixed hex address |
+| 4 | Nonce | Decimal uint32 |
+
+Note: This variant has no `arbiterFee` parameter. The `payload` is a dynamic bytes parameter; it is not displayed on the device.
 
 ### 5. ATTEST_TOKEN
 
@@ -162,9 +180,12 @@ The plugin maps Wormhole chain IDs to human-readable names:
   cannot be meaningfully displayed on a Ledger screen. The user is asked to
   confirm the transaction based on context (the Portal Bridge UI shows full
   details off-device).
-- Arbiter fee and amount are displayed with their respective units.
-- All addresses are displayed as `0x`-prefixed hex strings, truncated to
-  the last 20 bytes (Ethereum address convention).
+- Arbiter fee (when present) and amount are displayed with their respective units.
+- For non-payload variants, arbiter fee is shown in ETH with 18 decimal precision.
+- WITH_PAYLOAD variants do not have an arbiter fee parameter.
+- All addresses are displayed as `0x`-prefixed hex strings. For EVM-compatible
+  chains, the last 20 bytes are shown; for non-EVM chains (Solana, Sui, Aptos,
+  etc.), the full 32 bytes are displayed.
 
 ## Dependencies
 

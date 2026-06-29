@@ -58,6 +58,12 @@ typedef struct handle_wrap_and_transfer_eth_data_s {
     uint32_t nonce;
 } handle_wrap_and_transfer_eth_data_t;
 
+typedef struct handle_wrap_and_transfer_eth_with_payload_data_s {
+    uint16_t recipient_chain;
+    uint8_t recipient[32];
+    uint32_t nonce;
+} handle_wrap_and_transfer_eth_with_payload_data_t;
+
 typedef struct handle_attest_token_data_s {
     uint8_t token_address[32];
     uint32_t nonce;
@@ -71,6 +77,14 @@ typedef struct handle_transfer_tokens_data_s {
     uint8_t arbiter_fee[32];
     uint32_t nonce;
 } handle_transfer_tokens_data_t;
+
+typedef struct handle_transfer_tokens_with_payload_data_s {
+    uint8_t token[32];
+    uint8_t amount[32];
+    uint16_t recipient_chain;
+    uint8_t recipient[32];
+    uint32_t nonce;
+} handle_transfer_tokens_with_payload_data_t;
 
 /******************************************************************************
  * context_t — plugin wide context, shared across all handler calls.
@@ -90,9 +104,11 @@ typedef struct context_s {
     /* Union of per-function data (largest member determines total size). */
     union {
         handle_wrap_and_transfer_eth_data_t handle_wrap_and_transfer_eth_data;
+        handle_wrap_and_transfer_eth_with_payload_data_t handle_wrap_and_transfer_eth_with_payload_data;
         handle_attest_token_data_t handle_attest_token_data;
         handle_transfer_tokens_data_t handle_transfer_tokens_data;
-    };
+        handle_transfer_tokens_with_payload_data_t handle_transfer_tokens_with_payload_data;
+    } data;
 } context_t;
 
 /* Compile-time assertion that the context fits within the plugin arena. */

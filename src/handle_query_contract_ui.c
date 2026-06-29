@@ -84,12 +84,39 @@ static const char *get_chain_name(uint16_t chain_id) {
 
 // ---------------------------------------------------------------------------
 // Helper: format a 32-byte parameter as a 0x-prefixed hex string.
-// Only the *last* 20 bytes are shown (Ethereum address convention).
+// Shows all 32 bytes for non-EVM destinations, last 20 bytes for EVM chains.
 // ---------------------------------------------------------------------------
-static void format_address(const uint8_t *in, char *out, size_t out_len) {
-    // Ledger SDK provides snprintf.
+static bool is_evm_chain(uint16_t chain_id) {
+    switch (chain_id) {
+        case 2:   // Ethereum
+        case 5:   // Polygon (EVM)
+        case 6:   // Avalanche C-Chain
+        case 9:   // Aurora (NEAR EVM)
+        case 10:  // Fantom
+        case 11:  // Karura EVM
+        case 12:  // Acala EVM
+        case 13:  // Klaytn
+        case 14:  // Celo
+        case 16:  // Moonbeam
+        case 17:  // Neon (Solana EVM)
+        case 23:  // Arbitrum
+        case 24:  // Optimism
+        case 25:  // Gnosis
+        case 30:  // Base
+        case 32:  // Sei EVM
+        case 33:  // Rootstock
+        case 34:  // Scroll
+        case 35:  // Mantle
+            return true;
+        default:
+            return false;
+    }
+}
+
+static void format_address(const uint8_t *in, uint16_t chain_id, char *out, size_t out_len) {
     snprintf(out, out_len, "0x");
-    for (int i = 12; i < 32; i++) {
+    int start = is_evm_chain(chain_id) ? 12 : 0;  // EVM: last 20 bytes, non-EVM: all 32
+    for (int i = start; i < 32; i++) {
         char buf[3];
         snprintf(buf, sizeof(buf), "%02x", in[i]);
         strlcat(out, buf, out_len);
@@ -97,25 +124,14 @@ static void format_address(const uint8_t *in, char *out, size_t out_len) {
 }
 
 // ---------------------------------------------------------------------------
-// Helper: format a 32-byte big-endian amount as a decimal string with an
-// optional suffix.  The input is treated as a 256-bit unsigned integer.
-// For ETH amounts we display in ETH (18 decimals).
+// Helper: format a 32-byte big-endian uint256 as a decimal string using the
+// SDK's amountToString for full uint256 support (not truncated to 64 bits).
+// For ETH amounts (arbiter fee), display in ETH with 18 decimals.
 // ---------------------------------------------------------------------------
-static void format_amount(const uint8_t *amount, char *out, size_t out_len,
-                          const char *suffix) {
-    // For simplicity, display the raw hex amount truncated to reasonable size.
-    // A production plugin would use the SDK's amount formatting helpers.
-    // We do minimal formatting: show first few bytes as decimal if small,
-    // otherwise hex.
-    uint64_t val = U8BE(amount, 24);  // last 8 bytes
-    if (val == 0) {
-        val = U8BE(amount, 16);
-    }
-    if (val > 0) {
-        snprintf(out, out_len, "%llu %s", (unsigned long long) val, suffix);
-    } else {
-        snprintf(out, out_len, "0 %s", suffix);
-    }
+static void format_amount(const uint8_t *amount, char *out, size_t out_len) {
+    // Use the SDK-provided amountToString for full uint256 support.
+    // amountToString handles the full 32-byte big-endian value.
+    amountToString(amount, 32, out, out_len);
 }
 
 // ---------------------------------------------------------------------------
@@ -133,12 +149,16 @@ static void set_dst_chain(ethQueryContractUI_t *msg, context_t *context) {
     uint16_t chain_id;
     switch (context->selectorIndex) {
         case SEL_WRAP_AND_TRANSFER_ETH:
-        case SEL_WRAP_AND_TRANSFER_ETH_WITH_PAYLOAD:
             chain_id = context->data.handle_wrap_and_transfer_eth_data.recipient_chain;
             break;
+        case SEL_WRAP_AND_TRANSFER_ETH_WITH_PAYLOAD:
+            chain_id = context->data.handle_wrap_and_transfer_eth_with_payload_data.recipient_chain;
+            break;
         case SEL_TRANSFER_TOKENS:
-        case SEL_TRANSFER_TOKENS_WITH_PAYLOAD:
             chain_id = context->data.handle_transfer_tokens_data.recipient_chain;
+            break;
+        case SEL_TRANSFER_TOKENS_WITH_PAYLOAD:
+            chain_id = context->data.handle_transfer_tokens_with_payload_data.recipient_chain;
             break;
         default:
             chain_id = 0;
@@ -151,32 +171,39 @@ static void set_dst_chain(ethQueryContractUI_t *msg, context_t *context) {
 
 static void set_recipient(ethQueryContractUI_t *msg, context_t *context) {
     uint8_t *rec;
+    uint16_t chain_id = 0;
     switch (context->selectorIndex) {
         case SEL_WRAP_AND_TRANSFER_ETH:
-        case SEL_WRAP_AND_TRANSFER_ETH_WITH_PAYLOAD:
             rec = context->data.handle_wrap_and_transfer_eth_data.recipient;
+            chain_id = context->data.handle_wrap_and_transfer_eth_data.recipient_chain;
+            break;
+        case SEL_WRAP_AND_TRANSFER_ETH_WITH_PAYLOAD:
+            rec = context->data.handle_wrap_and_transfer_eth_with_payload_data.recipient;
+            chain_id = context->data.handle_wrap_and_transfer_eth_with_payload_data.recipient_chain;
             break;
         case SEL_TRANSFER_TOKENS:
-        case SEL_TRANSFER_TOKENS_WITH_PAYLOAD:
             rec = context->data.handle_transfer_tokens_data.recipient;
+            chain_id = context->data.handle_transfer_tokens_data.recipient_chain;
+            break;
+        case SEL_TRANSFER_TOKENS_WITH_PAYLOAD:
+            rec = context->data.handle_transfer_tokens_with_payload_data.recipient;
+            chain_id = context->data.handle_transfer_tokens_with_payload_data.recipient_chain;
             break;
         default:
             rec = context->data.handle_wrap_and_transfer_eth_data.recipient;
             break;
     }
     strlcpy(msg->title, "Recipient", sizeof(msg->title));
-    format_address(rec, msg->msg, sizeof(msg->msg));
+    format_address(rec, chain_id, msg->msg, sizeof(msg->msg));
 }
 
 static void set_arbiter_fee(ethQueryContractUI_t *msg, context_t *context) {
     uint8_t *fee;
     switch (context->selectorIndex) {
         case SEL_WRAP_AND_TRANSFER_ETH:
-        case SEL_WRAP_AND_TRANSFER_ETH_WITH_PAYLOAD:
             fee = context->data.handle_wrap_and_transfer_eth_data.arbiter_fee;
             break;
         case SEL_TRANSFER_TOKENS:
-        case SEL_TRANSFER_TOKENS_WITH_PAYLOAD:
             fee = context->data.handle_transfer_tokens_data.arbiter_fee;
             break;
         default:
@@ -184,19 +211,24 @@ static void set_arbiter_fee(ethQueryContractUI_t *msg, context_t *context) {
             break;
     }
     strlcpy(msg->title, "Arbiter Fee", sizeof(msg->title));
-    format_amount(fee, msg->msg, sizeof(msg->msg), "ETH");
+    format_amount(fee, msg->msg, sizeof(msg->msg));
+    strlcat(msg->msg, " ETH", sizeof(msg->msg));
 }
 
 static void set_nonce(ethQueryContractUI_t *msg, context_t *context) {
     uint32_t nonce;
     switch (context->selectorIndex) {
         case SEL_WRAP_AND_TRANSFER_ETH:
-        case SEL_WRAP_AND_TRANSFER_ETH_WITH_PAYLOAD:
             nonce = context->data.handle_wrap_and_transfer_eth_data.nonce;
             break;
+        case SEL_WRAP_AND_TRANSFER_ETH_WITH_PAYLOAD:
+            nonce = context->data.handle_wrap_and_transfer_eth_with_payload_data.nonce;
+            break;
         case SEL_TRANSFER_TOKENS:
-        case SEL_TRANSFER_TOKENS_WITH_PAYLOAD:
             nonce = context->data.handle_transfer_tokens_data.nonce;
+            break;
+        case SEL_TRANSFER_TOKENS_WITH_PAYLOAD:
+            nonce = context->data.handle_transfer_tokens_with_payload_data.nonce;
             break;
         case SEL_ATTEST_TOKEN:
             nonce = context->data.handle_attest_token_data.nonce;
@@ -223,10 +255,9 @@ static void set_token(ethQueryContractUI_t *msg, context_t *context) {
 
 static void set_amount(ethQueryContractUI_t *msg, context_t *context) {
     strlcpy(msg->title, "Amount", sizeof(msg->title));
-    // For TRANSFER_TOKENS the amount is the raw amount (to be combined with
-    // token decimals), show as raw integer for now.
     format_amount(context->data.handle_transfer_tokens_data.amount,
-                  msg->msg, sizeof(msg->msg), "tokens");
+                  msg->msg, sizeof(msg->msg));
+    strlcat(msg->msg, " tokens", sizeof(msg->msg));
 }
 
 // ---------------------------------------------------------------------------
@@ -242,11 +273,10 @@ void handle_query_contract_ui(ethQueryContractUI_t *msg) {
 
     switch (context->selectorIndex) {
         // ---------------------------------------------------------------
-        // WRAP_AND_TRANSFER_ETH (+ with payload variant)
+        // WRAP_AND_TRANSFER_ETH
         // Screens: 0=Dst Chain, 1=Recipient, 2=Arbiter Fee, 3=Nonce
         // ---------------------------------------------------------------
         case SEL_WRAP_AND_TRANSFER_ETH:
-        case SEL_WRAP_AND_TRANSFER_ETH_WITH_PAYLOAD:
             switch (msg->screenIndex) {
                 case 0:
                     set_dst_chain(msg, context);
@@ -267,12 +297,32 @@ void handle_query_contract_ui(ethQueryContractUI_t *msg) {
             break;
 
         // ---------------------------------------------------------------
-        // TRANSFER_TOKENS (+ with payload variant)
+        // WRAP_AND_TRANSFER_ETH_WITH_PAYLOAD
+        // Screens: 0=Dst Chain, 1=Recipient, 2=Nonce (NO Arbiter Fee)
+        // ---------------------------------------------------------------
+        case SEL_WRAP_AND_TRANSFER_ETH_WITH_PAYLOAD:
+            switch (msg->screenIndex) {
+                case 0:
+                    set_dst_chain(msg, context);
+                    break;
+                case 1:
+                    set_recipient(msg, context);
+                    break;
+                case 2:
+                    set_nonce(msg, context);
+                    break;
+                default:
+                    msg->result = ETH_PLUGIN_RESULT_ERROR;
+                    return;
+            }
+            break;
+
+        // ---------------------------------------------------------------
+        // TRANSFER_TOKENS
         // Screens: 0=Token, 1=Amount, 2=Dst Chain, 3=Recipient,
         //          4=Arbiter Fee, 5=Nonce
         // ---------------------------------------------------------------
         case SEL_TRANSFER_TOKENS:
-        case SEL_TRANSFER_TOKENS_WITH_PAYLOAD:
             switch (msg->screenIndex) {
                 case 0:
                     set_token(msg, context);
@@ -290,6 +340,34 @@ void handle_query_contract_ui(ethQueryContractUI_t *msg) {
                     set_arbiter_fee(msg, context);
                     break;
                 case 5:
+                    set_nonce(msg, context);
+                    break;
+                default:
+                    msg->result = ETH_PLUGIN_RESULT_ERROR;
+                    return;
+            }
+            break;
+
+        // ---------------------------------------------------------------
+        // TRANSFER_TOKENS_WITH_PAYLOAD
+        // Screens: 0=Token, 1=Amount, 2=Dst Chain, 3=Recipient,
+        //          4=Nonce (NO Arbiter Fee)
+        // ---------------------------------------------------------------
+        case SEL_TRANSFER_TOKENS_WITH_PAYLOAD:
+            switch (msg->screenIndex) {
+                case 0:
+                    set_token(msg, context);
+                    break;
+                case 1:
+                    set_amount(msg, context);
+                    break;
+                case 2:
+                    set_dst_chain(msg, context);
+                    break;
+                case 3:
+                    set_recipient(msg, context);
+                    break;
+                case 4:
                     set_nonce(msg, context);
                     break;
                 default:

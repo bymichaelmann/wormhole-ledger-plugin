@@ -37,3 +37,13 @@ fuzzing/timeout-*
 # Test artifacts
 tests/__pycache__/
 tests/.pytest_cache/
+node_modules/
+dist/
+out/
+target/
+artifacts/
+cache/
+coverage/
+.cache/
+.env
+*.log

@@ -1,13 +1,9 @@
-# ClusterFuzzLite configuration for the Wormhole Portal plugin.
-# This enables continuous fuzzing via OSS-Fuzz infrastructure.
-homepage: "https://portalbridge.com"
+homepage: "https://github.com/bymichaelmann/wormhole-ledger-plugin"
 language: c
-primary_contact: "security@wormhole.com"
-auto_cc:
-  - "maintainers@wormhole.com"
+primary_contact: "michaelmann@disroot.org"
 fuzzing_engines:
   - libfuzzer
 sanitizers:
   - address
   - undefined
-main_repo: "https://github.com/wormhole-foundation/ledger-plugin-portal-bridge"
+main_repo: "https://github.com/bymichaelmann/wormhole-ledger-plugin"

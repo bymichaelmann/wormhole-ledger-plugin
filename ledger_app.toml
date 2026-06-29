@@ -2,9 +2,9 @@
 name = "Wormhole Portal"
 version = "1.0.0"
 description = "Ledger plugin for the Wormhole Portal Token Bridge"
-authors = ["Wormhole Contributors"]
-repository = "https://github.com/wormhole-foundation/ledger-plugin-portal-bridge"
-homepage = "https://portalbridge.com"
+authors = ["Michael Mann <michaelmann@disroot.org>"]
+repository = "https://github.com/bymichaelmann/wormhole-ledger-plugin"
+homepage = "https://github.com/bymichaelmann/wormhole-ledger-plugin"
 license = "Apache-2.0"
 icons = "icons/"
 

@@ -23,11 +23,11 @@ before approval.
 
 | Function | Selector | Screens |
 |----------|----------|---------|
-| `WRAP_AND_TRANSFER_ETH` | `0x9981509f` | 4 (Dst Chain, Recipient, Arbiter Fee, Nonce) |
-| `WRAP_AND_TRANSFER_ETH_WITH_PAYLOAD` | `0xbee9cdfc` | 4 |
-| `TRANSFER_TOKENS` | `0x0f5287b0` | 6 (Token, Amount, Dst Chain, Recipient, Arbiter Fee, Nonce) |
-| `TRANSFER_TOKENS_WITH_PAYLOAD` | `0xc5a5ebda` | 6 |
-| `ATTEST_TOKEN` | `0xc48fa115` | 2 (Token Address, Nonce) |
+|| `WRAP_AND_TRANSFER_ETH` | `0x9981509f` | 4 (Dst Chain, Recipient, Arbiter Fee, Nonce) |
+|| `WRAP_AND_TRANSFER_ETH_WITH_PAYLOAD` | `0xbee9cdfc` | 3 (Dst Chain, Recipient, Nonce) |
+|| `TRANSFER_TOKENS` | `0x0f5287b0` | 6 (Token, Amount, Dst Chain, Recipient, Arbiter Fee, Nonce) |
+|| `TRANSFER_TOKENS_WITH_PAYLOAD` | `0xc5a5ebda` | 5 (Token, Amount, Dst Chain, Recipient, Nonce) |
+|| `ATTEST_TOKEN` | `0xc48fa115` | 2 (Token Address, Nonce) |
 | `COMPLETE_TRANSFER` | `0xc6878519` | 0 (confirm only) |
 | *(and 8 more admin functions)* | | confirm only |
 

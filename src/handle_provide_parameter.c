@@ -34,6 +34,36 @@ static void handle_wrap_and_transfer_eth(ethPluginProvideParameter_t *msg,
     }
 }
 
+static void handle_wrap_and_transfer_eth_with_payload(
+    ethPluginProvideParameter_t *msg, context_t *context) {
+    switch (context->next_param) {
+        case RECIPIENT_CHAIN:
+            // recipientChain is a uint16 at the end of the 32-byte word.
+            context->data.handle_wrap_and_transfer_eth_with_payload_data.recipient_chain =
+                U2BE(msg->parameter, PARAMETER_LENGTH - 2);
+            context->next_param = RECIPIENT;
+            break;
+
+        case RECIPIENT:
+            copy_parameter(
+                context->data.handle_wrap_and_transfer_eth_with_payload_data.recipient,
+                msg->parameter, PARAMETER_LENGTH);
+            context->next_param = NONCE;
+            break;
+
+        case NONCE:
+            context->data.handle_wrap_and_transfer_eth_with_payload_data.nonce =
+                U4BE(msg->parameter, PARAMETER_LENGTH - 4);
+            // After nonce comes the dynamic payload bytes (offset, length, data).
+            // We skip it — no display.
+            context->next_param = UNEXPECTED_PARAMETER;
+            break;
+
+        default:
+            break;
+    }
+}
+
 static void handle_transfer_tokens(ethPluginProvideParameter_t *msg,
                                    context_t *context) {
     switch (context->next_param) {
@@ -78,6 +108,49 @@ static void handle_transfer_tokens(ethPluginProvideParameter_t *msg,
     }
 }
 
+static void handle_transfer_tokens_with_payload(
+    ethPluginProvideParameter_t *msg, context_t *context) {
+    switch (context->next_param) {
+        case TOKEN:
+            copy_parameter(
+                context->data.handle_transfer_tokens_with_payload_data.token,
+                msg->parameter, PARAMETER_LENGTH);
+            context->next_param = AMOUNT;
+            break;
+
+        case AMOUNT:
+            copy_parameter(
+                context->data.handle_transfer_tokens_with_payload_data.amount,
+                msg->parameter, PARAMETER_LENGTH);
+            context->next_param = RECIPIENT_CHAIN;
+            break;
+
+        case RECIPIENT_CHAIN:
+            context->data.handle_transfer_tokens_with_payload_data.recipient_chain =
+                U2BE(msg->parameter, PARAMETER_LENGTH - 2);
+            context->next_param = RECIPIENT;
+            break;
+
+        case RECIPIENT:
+            copy_parameter(
+                context->data.handle_transfer_tokens_with_payload_data.recipient,
+                msg->parameter, PARAMETER_LENGTH);
+            context->next_param = NONCE;
+            break;
+
+        case NONCE:
+            context->data.handle_transfer_tokens_with_payload_data.nonce =
+                U4BE(msg->parameter, PARAMETER_LENGTH - 4);
+            // After nonce comes the dynamic payload bytes (offset, length, data).
+            // We skip it — no display.
+            context->next_param = UNEXPECTED_PARAMETER;
+            break;
+
+        default:
+            break;
+    }
+}
+
 static void handle_attest_token(ethPluginProvideParameter_t *msg,
                                 context_t *context) {
     switch (context->next_param) {
@@ -104,13 +177,19 @@ void handle_provide_parameter(ethPluginProvideParameter_t *msg) {
     // For non-display selectors, skip parsing entirely.
     switch (context->selectorIndex) {
         case SEL_WRAP_AND_TRANSFER_ETH:
-        case SEL_WRAP_AND_TRANSFER_ETH_WITH_PAYLOAD:
             handle_wrap_and_transfer_eth(msg, context);
             break;
 
+        case SEL_WRAP_AND_TRANSFER_ETH_WITH_PAYLOAD:
+            handle_wrap_and_transfer_eth_with_payload(msg, context);
+            break;
+
         case SEL_TRANSFER_TOKENS:
-        case SEL_TRANSFER_TOKENS_WITH_PAYLOAD:
             handle_transfer_tokens(msg, context);
+            break;
+
+        case SEL_TRANSFER_TOKENS_WITH_PAYLOAD:
+            handle_transfer_tokens_with_payload(msg, context);
             break;
 
         case SEL_ATTEST_TOKEN:

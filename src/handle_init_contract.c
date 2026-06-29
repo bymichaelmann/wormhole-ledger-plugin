@@ -29,12 +29,20 @@ void handle_init_contract(ethPluginInitContract_t *msg) {
     // Set the first parameter to expect during handle_provide_parameter.
     switch (context->selectorIndex) {
         case SEL_WRAP_AND_TRANSFER_ETH:
+            context->next_param = RECIPIENT_CHAIN;
+            break;
+
         case SEL_WRAP_AND_TRANSFER_ETH_WITH_PAYLOAD:
+            // WITH_PAYLOAD: recipientChain, recipient, nonce (no arbiterFee)
             context->next_param = RECIPIENT_CHAIN;
             break;
 
         case SEL_TRANSFER_TOKENS:
+            context->next_param = TOKEN;
+            break;
+
         case SEL_TRANSFER_TOKENS_WITH_PAYLOAD:
+            // WITH_PAYLOAD: token, amount, recipientChain, recipient, nonce (no arbiterFee)
             context->next_param = TOKEN;
             break;
 

@@ -51,4 +51,4 @@ jobs:
       - name: Run Ragger tests (speculos)
         run: |
           cd tests
-          pytest -v --ignore-glob='*real_device*' -x || echo "Tests need speculos emulator"
+          pytest -v -x
