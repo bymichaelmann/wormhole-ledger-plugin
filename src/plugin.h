@@ -31,6 +31,9 @@ typedef enum selector_e {
     SELECTOR_COUNT,
 } selector_t;
 
+/* The array of 4-byte selectors defined in plugin.c. */
+extern const uint32_t SELECTORS[SELECTOR_COUNT];
+
 /******************************************************************************
  * Parameter enum — corresponds to the order each function expects its
  * ABI-encoded parameters.
