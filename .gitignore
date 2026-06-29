@@ -6,8 +6,6 @@ bin/
 *.hex
 *.bin
 
-# SDK submodule
-ethereum-plugin-sdk/
 
 # Python
 __pycache__/
